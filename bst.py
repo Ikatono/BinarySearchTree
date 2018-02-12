@@ -8,34 +8,28 @@ class BST:
     #typeorder = (str, bool, (int, float))
     
     def __init__(self, key=None, data=None, parent=None):
-        
         self.key = key
         self.data = data
         self.parent = parent
         self.left = None
         self.right = None
-        #self.depth = (self.key is not None) * 1
     
-    #TODO unroll
     def __getitem__(self, key):
         if self.key is None:
             raise KeyError('key %s does not exist' % key)
-        if key == self.key:
-            return self.data
-        elif key < self.key:
-            if self.left is None:
-                raise KeyError('key %s does not exist' % key)
+        current = self
+        while key != current.key:
+            if key < current.key:
+                if current.left is None:
+                    raise KeyError('key %s does not exist' % key)
+                current = current.left
             else:
-                return self.left[key]
-        elif key > self.key:
-            if self.right is None:
-                raise KeyError('key %s does not exist' % key)
-            else:
-                return self.right[key]
-        else:
-            raise KeyError('key %s cannot be compared to other keys' % key)
+                if current.right is None:
+                    raise KeyError('key %s does not exist' % key)
+                current = current.right
+        return current.data
     
-    #TODO unroll
+    #TODO replace recursion with loop
     def __setitem__(self, key, data):
         if self.key is None:
             self.key = key
@@ -58,60 +52,53 @@ class BST:
     def __delitem__(self, key):
         if self.key is None:
             raise KeyError('key %s does not exist' % key)
-        if key < self.key:
-            if self.left is None:
-                raise KeyError('key %s does not exist' % key)
+        current = self
+        while key != current.key:
+            if key < current.key:
+                if current.left is None:
+                    raise KeyError('key %s does not exist' % key)
+                current = current.left
             else:
-                del self.left[key]
-        elif key > self.key:
-            if self.right is None:
-                raise KeyError('key %s does not exist' % key)
+                if current.right is None:
+                    raise KeyError('key %s does not exist' % key)
+                current = current.right
+        if current.left is None:
+            if current.right is None:
+                if current.parent is None:
+                    current.key = None
+                    current.data = None
+                else:
+                    if current.parent.left is current:
+                        current.parent.left = None
+                    else:
+                        current.parent.right = None
             else:
-                del self.right[key]
-        elif key == self.key:
-            isleft = self.parent.left is self
+                current.key = current.right.key
+                current.data = current.right.data
+                current.left = current.right.left
+                current.right = current.right.right
+        elif current.right is None:
+            current.key = current.left.key
+            current.data = current.left.data
+            current.right = current.left.right
+            current.left = current.left.left
+        else:
             #randomly determines which child to replace itself with
             #choosing one child consistently could lead to a lopsided list
-            if self.left is None:
-                if self.right is None:
-                    if isleft:
-                        self.parent.left = None
-                    else:
-                        self.parent.right = None
-                    return
-                else:
-                    pullleft = False
-            elif self.right is None:
-                pullleft = True
+            if not getrandbits(1):
+                #pull left
+                current.key = current.left.key
+                current.data = current.left.key
+                current.right.mergeleft(current.left.right)
+                current.left = current.left.left
             else:
-                pullleft = not getrandbits(1)
-            if isleft:
-                if pullleft:
-                    self.parent.left = self.left
-                    self.left.parent = self.parent
-                    self.right.mergeleft(self.left.right)
-                    self.left.right = self.right
-                else:
-                    self.parent.left = self.right
-                    self.right.parent = self.parent
-                    self.left.mergeright(self.right.left)
-                    self.right.left = self.left
-            else:
-                if pullleft:
-                    self.parent.right = self.left
-                    self.left.parent = self.parent
-                    self.right.mergeleft(self.left.right)
-                    self.left.right = self.right
-                else:
-                    self.parent.right = self.right
-                    self.right.parent = self.parent
-                    self.right.mergeleft(self.right.left)
-                    self.right.left = self.left
-            
-        else:
-            raise KeyError('key %s cannot be compared to other keys' % key)
-        
+                #pull right
+                current.key = current.right.key
+                current.data = current.right.data
+                current.left.mergeright(current.right.left)
+                current.right = current.right.right
     
+    #TODO replace recursion with loop
     def inorder(self):
         outp = ''
         if self.left is not None:
@@ -121,41 +108,40 @@ class BST:
             outp += ', ' + self.right.inorder()
         return outp
     
-    #TODO unroll
     def mergeleft(self, other):
         if other is None:
             return
-        if self.left is None:
-            self.left = other
-            other.parent = self
-        else:
-            self.left.mergeleft(other)
+        current = self
+        while current.left is not None:
+            current = current.left
+        current.left = other
+        other.parent = current
     
-    #TODO unroll
     def mergeright(self, other):
         if other is None:
             return
-        if self.right is None:
-            self.right = other
-            other.parent = self
-        else:
-            self.right.mergeright(other)
+        current = self
+        while current.right is not None:
+            current = current.right
+        current.right = other
+        other.parent = current
 
+#quickly makes a large tree for testing purposes
 def maketest():
     a = BST()
-    a[10] = ''
-    a[5] = ''
-    a[2] = ''
-    a[1] = ''
-    a[0] = ''
-    a[3] = ''
-    a[7] = ''
-    a[6] = ''
-    a[8] = '' 
-    a[9] = ''
-    a[15] = ''
-    a[13] = ''
-    a[17] = ''
-    a[19] = ''
-    a[18] = ''
+    a[10] = '10'
+    a[5] = '5'
+    a[2] = '2'
+    a[1] = '1'
+    a[0] = '0'
+    a[3] = '3'
+    a[7] = '7'
+    a[6] = '6'
+    a[8] = '8' 
+    a[9] = '9'
+    a[15] = '15'
+    a[13] = '13'
+    a[17] = '17'
+    a[19] = '19'
+    a[18] = '18'
     return a
