@@ -38,12 +38,12 @@ class BST:
             self.data = data
         if key < self.key:
             if self.left is None:
-                self.left = BST(key, data, parent = self)
+                self.left = BST(key, data, parent=self)
             else:
                 self.left[key] = data
         elif key > self.key:
             if self.right is None:
-                self.right = BST(key, data, parent = self)
+                self.right = BST(key, data, parent=self)
             else:
                 self.right[key] = data
         elif key == self.key:
@@ -113,6 +113,7 @@ class BST:
         return crnt
     
     #a deletion algorithm I came up with before consulting CLRS
+    #when deleting a node with two children this sometimes makes the tree taller
     # def __delitem__(self, key):
         # if self.key is None:
             # raise KeyError('key %s does not exist' % key)
@@ -230,6 +231,127 @@ class BST:
             crnt = crnt.right
         return crnt if retnode else crnt.key
 
+#red black tree
+#self-organizes to limit height to 2log(n+1)
+class RBT(BST):
+    
+    def __init__(self, key=None, data=None, parent=None, red=False):
+        self.key = key
+        self.data = data
+        self.parent = parent
+        self.red = red
+        self.left = None
+        self.right = None
+    
+    def __setitem__(self, key, data):
+        if self.key is None:
+            self.key = key
+            self.data = data
+            return
+        crnt = self
+        while key != crnt.key:
+            if key < crnt.key:
+                if crnt.left is None:
+                    #insert, fix, and return
+                    crnt.left = RBT(key, data, parent=crnt, red=True)
+                    self.fixup(crnt.left)
+                    return
+                else:
+                    crnt = crnt.left
+            else:
+                if crnt.right is None:
+                    #insert, fix, and return
+                    crnt.right = RBT(key, data, parent=crnt, red=True)
+                    self.fixup(crnt.right)
+                    return
+                else:
+                    crnt = crnt.right
+        crnt.data = data
+    
+    def fixup(self, crnt):
+        while crnt.red:
+            if crnt.parent is None or crnt.parent.parent is None:
+                break
+            #if crnt.parent is a left child
+            if crnt.parent is crnt.parent.parent.left:
+                y = crnt.parent.parent.right
+                if y is not None and y.red:
+                    crnt.parent.red = False
+                    y.red = False
+                    crnt.parent.parent.red = True
+                    crnt = crnt.parent.parent
+                else:
+                    if crnt.parent.right is crnt:
+                        crnt = crnt.parent
+                        self.rotleft(crnt)
+                    crnt.parent.red = False
+                    crnt.parent.parent.red = True
+                    self.rotright(crnt.parent.parent)
+            #if crnt.parent is a right child
+            else:
+                y = crnt.parent.parent.left
+                if y is not None and y.red:
+                    crnt.parent.red = False
+                    y.red = False
+                    crnt.parent.parent.red = True
+                    crnt = crnt.parent.parent
+                else:
+                    if crnt.parent.left is crnt:
+                        crnt = crnt.parent
+                        self.rotleft(crnt)
+                    crnt.parent.red = False
+                    crnt.parent.parent.red = True
+                    self.rotleft(crnt.parent.parent)
+        self.red = False
+    
+    #performs a left rotation on entry (or self if entry is None)
+    #entry can be a node or a key
+    def rotleft(self, entry=None):
+        if entry is None:
+            entry = self
+        if not isinstance(entry, RBT):
+            entry = self.getnode(entry)
+        if entry.parent is None:
+            r = entry.right
+            entry.right = entry.right.left
+            entry.parent = r
+            r.left = entry
+            r.parent = None
+        else:
+            if entry.parent.left is entry:
+                entry.parent.left = entry.right
+            else:
+                entry.parent.right = entry.right
+            entry.right.parent = entry.parent
+            r = entry.right
+            entry.right = entry.right.left
+            entry.parent = r
+            r.left = entry
+    
+    #performs a right rotation on entry (or self if entry is None)
+    #entry can be a node or a key
+    def rotright(self, entry=None):
+        if entry is None:
+            entry = self
+        elif not isinstance(entry, RBT):
+            entry = self.getnode(entry)
+        if entry.parent is None:
+            l = entry.left
+            entry.left = entry.left.right
+            entry.parent = l
+            l.right = entry
+            l.parent = None
+        else:
+            if entry.parent.left is entry:
+                entry.parent.left = entry.left
+            else:
+                entry.parent.right = entry.left
+            entry.left.parent = entry.parent
+            l = entry.left
+            entry.left = entry.left.right
+            entry.parent = l
+            l.right = entry
+
 #quickly makes a large tree for testing purposes
 def maketest():
     a = BST()
@@ -238,6 +360,29 @@ def maketest():
     a[2] = '2'
     a[1] = '1'
     a[0] = '0'
+    a[3] = '3'
+    a[7] = '7'
+    a[6] = '6'
+    a[8] = '8' 
+    a[9] = '9'
+    a[15] = '15'
+    a[13] = '13'
+    a[17] = '17'
+    a[19] = '19'
+    a[18] = '18'
+    return a
+
+#quickly makes a large red-black tree for testing purposes
+def makerbt():
+    a = RBT()
+    a[10] = '10'
+    a[11] = '11'
+    a[5] = '5'
+    a[2] = '2'
+    a[1] = '1'
+    a[0] = '0'
+    #return a
+    print(a.inorder())
     a[3] = '3'
     a[7] = '7'
     a[6] = '6'
