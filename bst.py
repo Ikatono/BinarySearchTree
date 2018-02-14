@@ -366,7 +366,7 @@ class RBT(BST):
             entry.parent = l
             l.right = entry
     
-    #tests that the this is a valid red black tree
+    #tests that this is a valid red black tree
     #returns the black height if the tree is valid, 0 if not
     def diagnostic(self):
         if self.parent is None:
@@ -392,6 +392,28 @@ class RBT(BST):
         if rh != lh:
             return 0
         return rh + (not self.red)
+    
+    #returns a lift of nodes who
+    def orphans(self, entry=None):
+        
+    
+    #returns a rough string representation of the tree
+    #set entry to print only a subtree
+    def printme(self, entry=None):
+        if entry is None:
+            entry = self
+        elif not isinstance(entry, RBT):
+            entry = self.getnode(entry)
+        s = str(entry.key)
+        if entry.left is not None or entry.right is not None:
+            s += '('
+            if entry.left is not None:
+                s += entry.left.printme()
+            s += ','
+            if entry.right is not None:
+                s += entry.right.printme()
+            s += ')'
+        return s
     
     # #returns parent the parent, or None if entry is None
     # #by default, returns key.node if entry is key.node
