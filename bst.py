@@ -195,27 +195,27 @@ class BST:
             for i in self.right.nodes():
                 yield i
     
-    #places a subtree in the minimum available position under another tree
-    #used by my old, bad deletion algorithm
-    def mergeleft(self, other):
-        if other is None:
-            return
-        crnt = self
-        while crnt.left is not None:
-            crnt = crnt.left
-        crnt.left = other
-        other.parent = crnt
+    # #places a subtree in the minimum available position under another tree
+    # #used by my old, bad deletion algorithm
+    # def mergeleft(self, other):
+        # if other is None:
+            # return
+        # crnt = self
+        # while crnt.left is not None:
+            # crnt = crnt.left
+        # crnt.left = other
+        # other.parent = crnt
     
-    #places a subtree in the maximum available position under another subtree
-    #used by my old, bad deletion algorithm
-    def mergeright(self, other):
-        if other is None:
-            return
-        crnt = self
-        while crnt.right is not None:
-            crnt = crnt.right
-        crnt.right = other
-        other.parent = crnt
+    # #places a subtree in the maximum available position under another subtree
+    # #used by my old, bad deletion algorithm
+    # def mergeright(self, other):
+        # if other is None:
+            # return
+        # crnt = self
+        # while crnt.right is not None:
+            # crnt = crnt.right
+        # crnt.right = other
+        # other.parent = crnt
     
     #returns minimum key or node
     def minimum(self, retnode=False):
@@ -269,13 +269,13 @@ class RBT(BST):
         crnt.data = data
     
     def fixup(self, crnt):
-        while crnt.red:
+        while RBT.isred(crnt.parent):
             if crnt.parent is None or crnt.parent.parent is None:
                 break
             #if crnt.parent is a left child
             if crnt.parent is crnt.parent.parent.left:
                 y = crnt.parent.parent.right
-                if y is not None and y.red:
+                if RBT.isred(y):
                     crnt.parent.red = False
                     y.red = False
                     crnt.parent.parent.red = True
@@ -290,7 +290,7 @@ class RBT(BST):
             #if crnt.parent is a right child
             else:
                 y = crnt.parent.parent.left
-                if y is not None and y.red:
+                if RBT.isred(y):
                     crnt.parent.red = False
                     y.red = False
                     crnt.parent.parent.red = True
@@ -298,7 +298,7 @@ class RBT(BST):
                 else:
                     if crnt.parent.left is crnt:
                         crnt = crnt.parent
-                        self.rotleft(crnt)
+                        self.rotright(crnt)
                     crnt.parent.red = False
                     crnt.parent.parent.red = True
                     self.rotleft(crnt.parent.parent)
@@ -312,11 +312,18 @@ class RBT(BST):
         if not isinstance(entry, RBT):
             entry = self.getnode(entry)
         if entry.parent is None:
-            r = entry.right
-            entry.right = entry.right.left
-            entry.parent = r
-            r.left = entry
-            r.parent = None
+            l = RBT(entry.key, entry.data, entry, entry.red)
+            l.left = entry.left
+            l.right = entry.right.left
+            if entry.right.right is not None:
+                entry.right.right.parent = entry
+            if l.left is not None:
+                l.left.parent = l
+            entry.left = l
+            entry.key = entry.right.key
+            entry.data = entry.right.data
+            entry.right = entry.right.right
+            entry.red = False
         else:
             if entry.parent.left is entry:
                 entry.parent.left = entry.right
@@ -336,11 +343,18 @@ class RBT(BST):
         elif not isinstance(entry, RBT):
             entry = self.getnode(entry)
         if entry.parent is None:
-            l = entry.left
-            entry.left = entry.left.right
-            entry.parent = l
-            l.right = entry
-            l.parent = None
+            r = RBT(entry.key, entry.data, entry, entry.red)
+            r.right = entry.right
+            r.left = entry.left.right
+            if entry.left.left is not None:
+                entry.left.left.parent = entry
+            if r.right is not None:
+                r.right.parent = r
+            entry.right = r
+            entry.key = entry.left.key
+            entry.data = entry.left.data
+            entry.left = entry.left.left
+            entry.red = False
         else:
             if entry.parent.left is entry:
                 entry.parent.left = entry.left
@@ -351,6 +365,47 @@ class RBT(BST):
             entry.left = entry.left.right
             entry.parent = l
             l.right = entry
+    
+    #tests that the this is a valid red black tree
+    #returns the black height if the tree is valid, 0 if not
+    def diagnostic(self):
+        if self.parent is None:
+            if self.red:
+                return 0
+        else:
+            if self.red and self.parent.red:
+                return 0
+        if self.left is None:
+            lh = 1
+        else:
+            lh = self.left.diagnostic()
+            if self.key < self.left.key:
+                return 0
+        if self.right is None:
+            rh = 1
+        else:
+            rh = self.right.diagnostic()
+            if self.key > self.right.key:
+                return 0
+        if not (rh and lh):
+            return 0
+        if rh != lh:
+            return 0
+        return rh + (not self.red)
+    
+    # #returns parent the parent, or None if entry is None
+    # #by default, returns key.node if entry is key.node
+    # @staticmethod
+    # def parent(entry, retnode=None):
+        # if entry is None:
+            # return None
+        # if not isinstance(entry, RBT):
+            
+    #returns True if entry is red, or False if it is black or None
+    def isred(entry):
+        if entry is None or not entry.red:
+            return False
+        return True
 
 #quickly makes a large tree for testing purposes
 def maketest():
@@ -373,24 +428,28 @@ def maketest():
     return a
 
 #quickly makes a large red-black tree for testing purposes
-def makerbt():
+def makerbt(n=20):
+    import random
     a = RBT()
-    a[10] = '10'
-    a[11] = '11'
-    a[5] = '5'
-    a[2] = '2'
-    a[1] = '1'
-    a[0] = '0'
+    lst = list(range(n))
+    random.shuffle(lst)
+    for i in lst:
+        print(i)
+        a[i] = str(i)
+        print(' '.join([str(i) for i in a.keys()]))
+        print(a.diagnostic())
+        yield a
     #return a
-    print(a.inorder())
-    a[3] = '3'
-    a[7] = '7'
-    a[6] = '6'
-    a[8] = '8' 
-    a[9] = '9'
-    a[15] = '15'
-    a[13] = '13'
-    a[17] = '17'
-    a[19] = '19'
-    a[18] = '18'
-    return a
+
+#tests a large number of insertions in a red black tree
+def insertiontest(n=100):
+    a = RBT()
+    lst = list(range(n))
+    import random
+    random.shuffle(lst)
+    cnt = 0
+    for i in lst:
+        print(cnt)
+        a[i] = str(i)
+        cnt += 1
+    return (a.diagnostic(), a)
