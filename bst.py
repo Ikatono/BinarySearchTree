@@ -254,7 +254,7 @@ class RBT(BST):
                 if crnt.left is None:
                     #insert, fix, and return
                     crnt.left = RBT(key, data, parent=crnt, red=True)
-                    self.fixup(crnt.left)
+                    self.insertfixup(crnt.left)
                     return
                 else:
                     crnt = crnt.left
@@ -262,16 +262,16 @@ class RBT(BST):
                 if crnt.right is None:
                     #insert, fix, and return
                     crnt.right = RBT(key, data, parent=crnt, red=True)
-                    self.fixup(crnt.right)
+                    self.insertfixup(crnt.right)
                     return
                 else:
                     crnt = crnt.right
         crnt.data = data
     
-    def fixup(self, crnt):
+    def insertfixup(self, crnt):
         while RBT.isred(crnt.parent):
-            if crnt.parent is None or crnt.parent.parent is None:
-                break
+            # if crnt.parent is None or crnt.parent.parent is None:
+                # break
             #if crnt.parent is a left child
             if crnt.parent is crnt.parent.parent.left:
                 y = crnt.parent.parent.right
@@ -284,9 +284,11 @@ class RBT(BST):
                     if crnt.parent.right is crnt:
                         crnt = crnt.parent
                         self.rotleft(crnt)
+                        crnt = crnt.left
                     crnt.parent.red = False
                     crnt.parent.parent.red = True
                     self.rotright(crnt.parent.parent)
+                    #crnt = crnt.right
             #if crnt.parent is a right child
             else:
                 y = crnt.parent.parent.left
@@ -299,81 +301,135 @@ class RBT(BST):
                     if crnt.parent.left is crnt:
                         crnt = crnt.parent
                         self.rotright(crnt)
+                        crnt = crnt.right
                     crnt.parent.red = False
                     crnt.parent.parent.red = True
                     self.rotleft(crnt.parent.parent)
+                    #crnt = crnt.left
         self.red = False
     
-    #performs a left rotation on entry (or self if entry is None)
-    #entry can be a node or a key
+    # #performs a left rotation on entry (or self if entry is None)
+    # #entry can be a node or a key
+    # def rotleft(self, entry=None):
+        # if entry is None:
+            # entry = self
+        # if not isinstance(entry, RBT):
+            # entry = self.getnode(entry)
+        # if entry.right is None:
+            # raise RuntimeError('Cannot perform left rotation on a node without a right child')
+        # if entry.parent is None:
+            # l = RBT(entry.key, entry.data, entry, entry.red)
+            # l.left = entry.left
+            # if l.left is not None:
+                # l.left.parent = l
+            # l.right = entry.right.left
+            # if l.right is not None:
+                # l.right.parent = l
+            # if entry.right.right is not None:
+                # entry.right.right.parent = entry
+            # entry.left = l
+            # entry.key = entry.right.key
+            # entry.data = entry.right.data
+            # entry.right = entry.right.right
+            # entry.red = False
+        # else:
+            # if entry.parent.left is entry:
+                # entry.parent.left = entry.right
+            # else:
+                # entry.parent.right = entry.right
+            # entry.right.parent = entry.parent
+            # r = entry.right
+            # entry.right = entry.right.left
+            # entry.parent = r
+            # r.left = entry
+    
+    #new left rotate algorithm that doesn't distinguish between root and other nodes
     def rotleft(self, entry=None):
         if entry is None:
             entry = self
         if not isinstance(entry, RBT):
             entry = self.getnode(entry)
-        if entry.parent is None:
-            l = RBT(entry.key, entry.data, entry, entry.red)
-            l.left = entry.left
-            l.right = entry.right.left
-            if entry.right.right is not None:
-                entry.right.right.parent = entry
-            if l.left is not None:
-                l.left.parent = l
-            entry.left = l
-            entry.key = entry.right.key
-            entry.data = entry.right.data
-            entry.right = entry.right.right
-            entry.red = False
-        else:
-            if entry.parent.left is entry:
-                entry.parent.left = entry.right
-            else:
-                entry.parent.right = entry.right
-            entry.right.parent = entry.parent
-            r = entry.right
-            entry.right = entry.right.left
-            entry.parent = r
-            r.left = entry
+        if entry.right is None:
+            raise RuntimeError('Cannot perform left rotation on node without right child')
+        l = RBT(entry.key, entry.data, entry, entry.red)
+        l.left = entry.left
+        if l.left is not None:
+            l.left.parent = l
+        l.right = entry.right.left
+        if l.right is not None:
+            l.right.parent = l
+        entry.key = entry.right.key
+        entry.data = entry.right.data
+        entry.red = entry.right.red
+        entry.left = l
+        entry.right = entry.right.right
+        if entry.right is not None:
+            entry.right.parent = entry
     
-    #performs a right rotation on entry (or self if entry is None)
-    #entry can be a node or a key
+    #new left rotate algorithm that doesn't distinguish between root and other nodes
     def rotright(self, entry=None):
         if entry is None:
             entry = self
-        elif not isinstance(entry, RBT):
+        if not isinstance(entry, RBT):
             entry = self.getnode(entry)
-        if entry.parent is None:
-            r = RBT(entry.key, entry.data, entry, entry.red)
-            r.right = entry.right
-            r.left = entry.left.right
-            if entry.left.left is not None:
-                entry.left.left.parent = entry
-            if r.right is not None:
-                r.right.parent = r
-            entry.right = r
-            entry.key = entry.left.key
-            entry.data = entry.left.data
-            entry.left = entry.left.left
-            entry.red = False
-        else:
-            if entry.parent.left is entry:
-                entry.parent.left = entry.left
-            else:
-                entry.parent.right = entry.left
-            entry.left.parent = entry.parent
-            l = entry.left
-            entry.left = entry.left.right
-            entry.parent = l
-            l.right = entry
+        if entry.left is None:
+            raise RuntimeError('Cannot perform right rotation on node without left child')
+        r = RBT(entry.key, entry.data, entry, entry.red)
+        r.right = entry.right
+        if r.right is not None:
+            r.right.parent = r
+        r.left = entry.left.right
+        if r.left is not None:
+            r.left.parent = r
+        entry.key = entry.left.key
+        entry.data = entry.left.data
+        entry.red = entry.left.red
+        entry.right = r
+        entry.left = entry.left.left
+        if entry.left is not None:
+            entry.left.parent = entry
+    
+    # #performs a right rotation on entry (or self if entry is None)
+    # #entry can be a node or a key
+    # def rotright(self, entry=None):
+        # if entry is None:
+            # entry = self
+        # elif not isinstance(entry, RBT):
+            # entry = self.getnode(entry)
+        # if entry.left is None:
+            # raise RuntimeError('Cannot perform left rotation on a node without a right child')
+        # if entry.parent is None:
+            # r = RBT(entry.key, entry.data, entry, entry.red)
+            # r.right = entry.right
+            # r.left = entry.left.right
+            # if r.left is not None:
+                # r.left.parent = r
+            # if entry.left.left is not None:
+                # entry.left.left.parent = entry
+            # if r.right is not None:
+                # r.right.parent = r
+            # entry.right = r
+            # entry.key = entry.left.key
+            # entry.data = entry.left.data
+            # entry.left = entry.left.left
+            # entry.red = False
+        # else:
+            # if entry.parent.left is entry:
+                # entry.parent.left = entry.left
+            # else:
+                # entry.parent.right = entry.left
+            # entry.left.parent = entry.parent
+            # l = entry.left
+            # entry.left = entry.left.right
+            # entry.parent = l
+            # l.right = entry
     
     #tests that this is a valid red black tree
     #returns the black height if the tree is valid, 0 if not
+    #doesn't verify that the root is black, so it can be run on subtrees
     def diagnostic(self):
-        if self.parent is None:
-            if self.red:
-                return 0
-        else:
-            if self.red and self.parent.red:
+        if self.red:
+            if RBT.isred(self.left) or RBT.isred(self.right):
                 return 0
         if self.left is None:
             lh = 1
@@ -393,9 +449,21 @@ class RBT(BST):
             return 0
         return rh + (not self.red)
     
-    #returns a lift of nodes who
+    #returns a lift of nodes who don't know who their parents are
+    #ignores nodes whose parents are root
     def orphans(self, entry=None):
-        
+        if entry is None:
+            entry = self
+        elif not isinstance(entry, RBT):
+            entry = self.getnode(entry)
+        o = []
+        if entry.left is not None:
+            o += entry.left.orphans()
+        if entry.right is not None:
+            o += entry.right.orphans()
+        if self.parent is not None and self not in (self.parent.left, self.parent.right):
+            o += [entry]
+        return o
     
     #returns a rough string representation of the tree
     #set entry to print only a subtree
@@ -415,6 +483,24 @@ class RBT(BST):
             s += ')'
         return s
     
+    #uses square brackets to represent red nodes
+    #TODO add representation for red nodes with no children
+    def printcolor(self, entry=None):
+        if entry is None:
+            entry = self
+        elif not isinstance(entry, RBT):
+            entry = self.getnode(entry)
+        s = str(entry.key)
+        if entry.left is not None or entry.right is not None:
+            s += '[' if entry.red else '('
+            if entry.left is not None:
+                s += entry.left.printcolor()
+            s += ','
+            if entry.right is not None:
+                s += entry.right.printcolor()
+            s += ']' if entry.red else ')'
+        return s
+    
     # #returns parent the parent, or None if entry is None
     # #by default, returns key.node if entry is key.node
     # @staticmethod
@@ -423,7 +509,7 @@ class RBT(BST):
             # return None
         # if not isinstance(entry, RBT):
             
-    #returns True if entry is red, or False if it is black or None
+    #allows you to test the color of a node without first verifying that it isn't None
     def isred(entry):
         if entry is None or not entry.red:
             return False
